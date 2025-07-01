@@ -163,6 +163,29 @@ function App() {
     }
   };
 
+  // Adopt a dog
+const adoptDog = async (id) => {
+  setError("");
+  try {
+    const res = await fetch(`${API_BASE}/dogs/adopt/${id}`, {
+      method: "POST", // assuming adopt endpoint uses POST
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ thankYou: "Thank you for your dog!" }), // example thank you message, can make dynamic
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to adopt dog");
+    alert(data.message);
+    // Refresh lists after adoption
+    fetchMyDogs();
+    fetchAdoptedDogs();
+  } catch (err) {
+    setError(err.message);
+  }
+};
+
   // Effects to fetch dogs when token, statusFilter, page or adoptedPage changes
   useEffect(() => {
     if (token) {
@@ -239,15 +262,25 @@ function App() {
             ) : (
               <>
                 <ul>
-                  {dogs.map((dog) => (
-                    <li key={dog._id}>
-                      <strong>{dog.name}</strong>: {dog.description}{" "}
-                      {dog.adoptedBy ? "(Adopted)" : "(Available)"}
-                      {!dog.adoptedBy && (
-                        <button onClick={() => removeDog(dog._id)}>Remove</button>
-                      )}
-                    </li>
-                  ))}
+           {dogs.map((dog) => (
+            <li key={dog._id}>
+              <strong>{dog.name}</strong>: {dog.description}{" "}
+              {dog.adoptedBy ? (
+                "(Adopted)"
+              ) : (
+               <>
+                "(Available) "
+               {!dog.adoptedBy && (
+  <>
+    <button onClick={() => adoptDog(dog._id)}>Adopt</button>
+  </>
+)}
+{dog.adoptedBy && "(Adopted)"}
+              <button onClick={() => removeDog(dog._id)}>Remove</button>
+            </>
+          )}
+      </li>
+    ))}
                 </ul>
 
                 <div style={{ marginTop: "10px" }}>

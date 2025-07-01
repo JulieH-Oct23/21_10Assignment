@@ -104,24 +104,29 @@ export const adoptDog = async (req, res) => {
 // Remove a dog
 export const removeDog = async (req, res) => {
   try {
+    console.log("🔍 User attempting to remove dog:", req.params.id, "by user", req.user.id);
     const dog = await Dog.findById(req.params.id);
 
     if (!dog) {
+      console.log("❌ Dog not found");
       return res.status(404).json({ message: "Dog not found" });
     }
 
     if (dog.owner.toString() !== req.user.id) {
+      console.log("❌ User not authorized to remove this dog");
       return res.status(403).json({ message: "You can only remove your own dogs" });
     }
 
     if (dog.adoptedBy) {
+      console.log("❌ Dog already adopted");
       return res.status(400).json({ message: "Cannot remove an adopted dog" });
     }
 
-    await dog.remove();
+    await Dog.findByIdAndDelete(dog._id);
+    console.log("✅ Dog removed successfully");
     res.status(200).json({ message: "Dog removed successfully" });
   } catch (error) {
-    console.error("Remove Dog Error:", error);
+    console.error("🔥 Remove Dog Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
