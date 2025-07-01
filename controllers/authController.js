@@ -6,7 +6,7 @@ import User from "../models/User.js";
 
 dotenv.config();
 
-export const register = async (req, res) => {
+export const registerUser = async (req, res) => {
   const { username, password } = req.body;
 
   try {
@@ -25,7 +25,7 @@ export const register = async (req, res) => {
   }
 };
 
-export const login = async (req, res) => {
+export const loginUser = async (req, res) => {
   const { username, password } = req.body;
 
   try {

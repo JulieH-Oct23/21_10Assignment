@@ -14,20 +14,26 @@ const PORT = process.env.PORT || 5000;
 // Connect to MongoDB
 connectDB();
 
-// Middleware
+// Middleware: parse JSON bodies
+app.use(express.json());
+
+// Middleware: enable CORS for frontend origin WITHOUT credentials
 app.use(
   cors({
     origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,
+    // credentials: true is removed here
   })
 );
+
+// Handle preflight requests for all routes
+app.options("*", cors());
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/dogs", dogRoutes);
 
-// Global error handler (optional)
+// Global error handler
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error("Global error:", err.stack);
@@ -40,6 +46,4 @@ if (process.env.NODE_ENV !== "test") {
     console.log(`Server running on port ${PORT}`);
   });
 }
-
-// Export the app for testing
 export default app;

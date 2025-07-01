@@ -120,7 +120,7 @@ function App() {
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h1>Dog Adoption Platform</h1>
+      <h1>Julie's Online Dog Adoption Center</h1>
 
       <div>
         <h2>Register / Login</h2>
