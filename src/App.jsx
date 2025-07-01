@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-const API_BASE = "http://localhost:5000/api";
+
+const API_BASE = "http://localhost:4000/api";
 
 function App() {
   // Authentication and dog registration states
@@ -21,106 +22,165 @@ function App() {
   const [adoptedPage, setAdoptedPage] = useState(1);
   const [adoptedTotalPages, setAdoptedTotalPages] = useState(1);
 
+  // Loading and error states
+  const [loadingDogs, setLoadingDogs] = useState(false);
+  const [loadingAdopted, setLoadingAdopted] = useState(false);
+  const [error, setError] = useState("");
+
   const limit = 5;
 
   // User Registration
   const register = async () => {
-    const res = await fetch(`${API_BASE}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-    alert(data.message);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Registration failed");
+      alert(data.message);
+      setUsername("");
+      setPassword("");
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   // User Login
   const login = async () => {
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-    if (data.token) {
-      setToken(data.token);
-      localStorage.setItem("token", data.token);
-      fetchMyDogs(data.token, 1, statusFilter);
-      fetchAdoptedDogs(data.token, 1);
-    } else {
-      alert("Login failed");
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (data.token) {
+        setToken(data.token);
+        localStorage.setItem("token", data.token);
+        setUsername("");
+        setPassword("");
+        setPage(1);
+        setAdoptedPage(1);
+      } else {
+        throw new Error("Login failed");
+      }
+    } catch (err) {
+      setError(err.message);
     }
   };
 
   // Fetch user's registered dogs with filtering and pagination
   const fetchMyDogs = async (jwtToken = token, currentPage = page, status = statusFilter) => {
-    const query = new URLSearchParams();
-    if (status) query.append("status", status);
-    query.append("page", currentPage);
-    query.append("limit", limit);
+    setLoadingDogs(true);
+    setError("");
+    try {
+      const query = new URLSearchParams();
+      if (status) query.append("status", status);
+      query.append("page", currentPage);
+      query.append("limit", limit);
 
-    const res = await fetch(`${API_BASE}/dogs/registered?${query.toString()}`, {
-      headers: { Authorization: `Bearer ${jwtToken}` },
-    });
-
-    const data = await res.json();
-    setDogs(data.dogs || []);
-    setTotalPages(Math.ceil(data.total / limit));
+      const res = await fetch(`${API_BASE}/dogs/registered?${query.toString()}`, {
+        headers: { Authorization: `Bearer ${jwtToken}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to fetch dogs");
+      setDogs(data.dogs || []);
+      setTotalPages(Math.ceil(data.total / limit));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingDogs(false);
+    }
   };
 
   // Fetch adopted dogs with pagination
   const fetchAdoptedDogs = async (jwtToken = token, currentPage = adoptedPage) => {
-    const query = new URLSearchParams();
-    query.append("page", currentPage);
-    query.append("limit", limit);
+    setLoadingAdopted(true);
+    setError("");
+    try {
+      const query = new URLSearchParams();
+      query.append("page", currentPage);
+      query.append("limit", limit);
 
-    const res = await fetch(`${API_BASE}/dogs/adopted?${query.toString()}`, {
-      headers: { Authorization: `Bearer ${jwtToken}` },
-    });
-
-    const data = await res.json();
-    setAdoptedDogs(data.dogs || []);
-    setAdoptedTotalPages(Math.ceil(data.total / limit));
+      const res = await fetch(`${API_BASE}/dogs/adopted?${query.toString()}`, {
+        headers: { Authorization: `Bearer ${jwtToken}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to fetch adopted dogs");
+      setAdoptedDogs(data.dogs || []);
+      setAdoptedTotalPages(Math.ceil(data.total / limit));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingAdopted(false);
+    }
   };
 
   // Register a new dog
   const registerDog = async () => {
-    const res = await fetch(`${API_BASE}/dogs/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ name, description }),
-    });
-    const data = await res.json();
-    alert(data.message);
-    fetchMyDogs();
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/dogs/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name, description }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to register dog");
+      alert(data.message);
+      setName("");
+      setDescription("");
+      setPage(1);
+      fetchMyDogs();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   // Remove a dog
   const removeDog = async (id) => {
-    const res = await fetch(`${API_BASE}/dogs/remove/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data = await res.json();
-    alert(data.message);
-    fetchMyDogs();
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/dogs/remove/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to remove dog");
+      alert(data.message);
+      fetchMyDogs();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
+  // Effects to fetch dogs when token, statusFilter, page or adoptedPage changes
   useEffect(() => {
     if (token) {
-      fetchMyDogs(token, 1, statusFilter);
-      fetchAdoptedDogs(token, 1);
+      fetchMyDogs(token, page, statusFilter);
+      fetchAdoptedDogs(token, adoptedPage);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, statusFilter, page, adoptedPage]);
 
   return (
     <div style={{ padding: "2rem" }}>
       <h1>Julie's Online Dog Adoption Center</h1>
+
+      {error && (
+        <div style={{ color: "red", marginBottom: "1rem" }}>
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
       <div>
         <h2>Register / Login</h2>
@@ -141,7 +201,7 @@ function App() {
 
       {token && (
         <>
-          <div>
+          <div style={{ marginTop: "2rem" }}>
             <h2>Register a Dog</h2>
             <input
               placeholder="Dog's Name"
@@ -156,7 +216,7 @@ function App() {
             <button onClick={registerDog}>Submit</button>
           </div>
 
-          <div>
+          <div style={{ marginTop: "2rem" }}>
             <h2>My Registered Dogs</h2>
 
             <div>
@@ -165,8 +225,7 @@ function App() {
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
-                  setPage(1);
-                  fetchMyDogs(token, 1, e.target.value);
+                  setPage(1); // reset page when filter changes
                 }}
               >
                 <option value="">All</option>
@@ -175,81 +234,77 @@ function App() {
               </select>
             </div>
 
-            <ul>
-              {dogs.map((dog) => (
-                <li key={dog._id}>
-                  <strong>{dog.name}</strong>: {dog.description}{" "}
-                  {dog.adoptedBy ? "(Adopted)" : "(Available)"}
-                  {!dog.adoptedBy && (
-                    <button onClick={() => removeDog(dog._id)}>Remove</button>
-                  )}
-                </li>
-              ))}
-            </ul>
+            {loadingDogs ? (
+              <p>Loading registered dogs...</p>
+            ) : (
+              <>
+                <ul>
+                  {dogs.map((dog) => (
+                    <li key={dog._id}>
+                      <strong>{dog.name}</strong>: {dog.description}{" "}
+                      {dog.adoptedBy ? "(Adopted)" : "(Available)"}
+                      {!dog.adoptedBy && (
+                        <button onClick={() => removeDog(dog._id)}>Remove</button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
 
-            <div style={{ marginTop: "10px" }}>
-              <button
-                onClick={() => {
-                  const newPage = Math.max(page - 1, 1);
-                  setPage(newPage);
-                  fetchMyDogs(token, newPage, statusFilter);
-                }}
-                disabled={page <= 1}
-              >
-                Previous
-              </button>
-              <span style={{ margin: "0 10px" }}>
-                Page {page} of {totalPages}
-              </span>
-              <button
-                onClick={() => {
-                  const newPage = Math.min(page + 1, totalPages);
-                  setPage(newPage);
-                  fetchMyDogs(token, newPage, statusFilter);
-                }}
-                disabled={page >= totalPages}
-              >
-                Next
-              </button>
-            </div>
+                <div style={{ marginTop: "10px" }}>
+                  <button
+                    onClick={() => setPage(Math.max(page - 1, 1))}
+                    disabled={page <= 1}
+                  >
+                    Previous
+                  </button>
+                  <span style={{ margin: "0 10px" }}>
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(Math.min(page + 1, totalPages))}
+                    disabled={page >= totalPages}
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           <div style={{ marginTop: "2rem" }}>
             <h2>My Adopted Dogs</h2>
-            <ul>
-              {adoptedDogs.map((dog) => (
-                <li key={dog._id}>
-                  <strong>{dog.name}</strong>: {dog.description} - Thank you:{" "}
-                  {dog.thankYouMessage || "N/A"}
-                </li>
-              ))}
-            </ul>
+            {loadingAdopted ? (
+              <p>Loading adopted dogs...</p>
+            ) : (
+              <>
+                <ul>
+                  {adoptedDogs.map((dog) => (
+                    <li key={dog._id}>
+                      <strong>{dog.name}</strong>: {dog.description} - Thank you:{" "}
+                      {dog.thankYouMessage || "N/A"}
+                    </li>
+                  ))}
+                </ul>
 
-            <div style={{ marginTop: "10px" }}>
-              <button
-                onClick={() => {
-                  const newPage = Math.max(adoptedPage - 1, 1);
-                  setAdoptedPage(newPage);
-                  fetchAdoptedDogs(token, newPage);
-                }}
-                disabled={adoptedPage <= 1}
-              >
-                Previous
-              </button>
-              <span style={{ margin: "0 10px" }}>
-                Page {adoptedPage} of {adoptedTotalPages}
-              </span>
-              <button
-                onClick={() => {
-                  const newPage = Math.min(adoptedPage + 1, adoptedTotalPages);
-                  setAdoptedPage(newPage);
-                  fetchAdoptedDogs(token, newPage);
-                }}
-                disabled={adoptedPage >= adoptedTotalPages}
-              >
-                Next
-              </button>
-            </div>
+                <div style={{ marginTop: "10px" }}>
+                  <button
+                    onClick={() => setAdoptedPage(Math.max(adoptedPage - 1, 1))}
+                    disabled={adoptedPage <= 1}
+                  >
+                    Previous
+                  </button>
+                  <span style={{ margin: "0 10px" }}>
+                    Page {adoptedPage} of {adoptedTotalPages}
+                  </span>
+                  <button
+                    onClick={() => setAdoptedPage(Math.min(adoptedPage + 1, adoptedTotalPages))}
+                    disabled={adoptedPage >= adoptedTotalPages}
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </>
       )}

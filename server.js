@@ -1,49 +1,35 @@
+// server.js
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import mongoose from "mongoose";
 import process from "process";
-import { connectDB } from "./db.js";
+
+// Routes
 import authRoutes from "./routes/authRoutes.js";
-import dogRoutes from "./routes/dogRoutes.js";
+import dogRoutes from "./routes/dogRoutes.js"; // ✅ Add dog routes
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
-// Connect to MongoDB
-connectDB();
-
-// Middleware: parse JSON bodies
+// Middleware
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
 
-// Middleware: enable CORS for frontend origin WITHOUT credentials
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    // credentials: true is removed here
-  })
-);
-
-// Handle preflight requests for all routes
-app.options("*", cors());
-
 // Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/dogs", dogRoutes);
+app.use("/api/auth", authRoutes); // ✅ Authentication routes
+app.use("/api/dogs", dogRoutes);  // ✅ Dog-related routes
 
-// Global error handler
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-  console.error("Global error:", err.stack);
-  res.status(500).json({ message: "Server error" });
+// Test Route
+app.get("/", (req, res) => {
+  res.json({ message: "Server is working!" });
 });
 
-// Start server only if not in test mode
-if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}
-export default app;
+// MongoDB connection & server start
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+  })
+  .catch(err => console.error("❌ MongoDB connection error:", err));

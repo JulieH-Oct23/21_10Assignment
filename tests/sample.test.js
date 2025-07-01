@@ -1,4 +1,5 @@
 /* eslint-env mocha */
+/* global describe, it */
 import { strict as assert } from "assert";
 
 describe("Sample Test", () => {

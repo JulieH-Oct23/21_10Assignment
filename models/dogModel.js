@@ -4,8 +4,8 @@ import mongoose from "mongoose";
 const dogSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    description: String,
-    registeredBy: {
+    description: { type: String },
+    owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -15,11 +15,13 @@ const dogSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
-    thankYouMessage: { type: String, default: "" },
+    thankYouMessage: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );
 
 const Dog = mongoose.model("Dog", dogSchema);
-
 export default Dog;
