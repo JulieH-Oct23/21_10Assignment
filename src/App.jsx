@@ -1,11 +1,14 @@
+import * as jwtDecodeModule from "jwt-decode";
 import { useEffect, useState } from "react";
 
+const jwtDecode = jwtDecodeModule.default || jwtDecodeModule;
 
 const API_BASE = "http://localhost:4000/api";
 
 function App() {
   // Authentication and dog registration states
   const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [loggedInUser, setLoggedInUser] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [dogs, setDogs] = useState([]);
@@ -71,6 +74,13 @@ function App() {
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  // User Logout
+  const logout = () => {
+    setToken("");
+    setLoggedInUser("");
+    localStorage.removeItem("token");
   };
 
   // Fetch user's registered dogs with filtering and pagination
@@ -164,35 +174,48 @@ function App() {
   };
 
   // Adopt a dog
-const adoptDog = async (id) => {
-  setError("");
-  try {
-    const res = await fetch(`${API_BASE}/dogs/adopt/${id}`, {
-      method: "POST", // assuming adopt endpoint uses POST
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ thankYou: "Thank you for your dog!" }), // example thank you message, can make dynamic
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Failed to adopt dog");
-    alert(data.message);
-    // Refresh lists after adoption
-    fetchMyDogs();
-    fetchAdoptedDogs();
-  } catch (err) {
-    setError(err.message);
-  }
-};
+  const adoptDog = async (id) => {
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/dogs/adopt/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ thankYou: "Thank you for your dog!" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to adopt dog");
+      alert(data.message);
+      fetchMyDogs();
+      fetchAdoptedDogs();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
-  // Effects to fetch dogs when token, statusFilter, page or adoptedPage changes
+  // Decode token and set loggedInUser on token changes
+  useEffect(() => {
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        console.log("Decodeed JWT:", decoded)
+        setLoggedInUser(decoded.username || "");
+      } catch {
+        setLoggedInUser("");
+      }
+    } else {
+      setLoggedInUser("");
+    }
+  }, [token]);
+
+  // Fetch dogs when token, statusFilter, page or adoptedPage changes
   useEffect(() => {
     if (token) {
       fetchMyDogs(token, page, statusFilter);
       fetchAdoptedDogs(token, adoptedPage);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, statusFilter, page, adoptedPage]);
 
   return (
@@ -205,25 +228,35 @@ const adoptDog = async (id) => {
         </div>
       )}
 
-      <div>
-        <h2>Register / Login</h2>
-        <input
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button onClick={register}>Register</button>
-        <button onClick={login}>Login</button>
-      </div>
-
-      {token && (
+      {!token ? (
+        <div>
+          <h2>Register / Login</h2>
+          <input
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <input
+            placeholder="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button onClick={register}>Register</button>
+          <button onClick={login}>Login</button>
+        </div>
+      ) : (
         <>
+          <div style={{ marginBottom: "1rem" }}>
+            Logged in as: <strong>{loggedInUser}</strong>
+            <button
+              style={{ marginLeft: "1rem" }}
+              onClick={logout}
+            >
+              Logout
+            </button>
+          </div>
+
           <div style={{ marginTop: "2rem" }}>
             <h2>Register a Dog</h2>
             <input
@@ -262,25 +295,24 @@ const adoptDog = async (id) => {
             ) : (
               <>
                 <ul>
-           {dogs.map((dog) => (
-            <li key={dog._id}>
-              <strong>{dog.name}</strong>: {dog.description}{" "}
-              {dog.adoptedBy ? (
-                "(Adopted)"
-              ) : (
-               <>
-                "(Available) "
-               {!dog.adoptedBy && (
-  <>
-    <button onClick={() => adoptDog(dog._id)}>Adopt</button>
-  </>
-)}
-{dog.adoptedBy && "(Adopted)"}
-              <button onClick={() => removeDog(dog._id)}>Remove</button>
-            </>
-          )}
-      </li>
-    ))}
+                  {dogs.map((dog) => (
+                    <li key={dog._id}>
+                      <strong>{dog.name}</strong>: {dog.description}{" "}
+                      {dog.adoptedBy ? (
+                        "(Adopted)"
+                      ) : (
+                        <>
+                          "(Available) "
+                          {!dog.adoptedBy && (
+                            <>
+                              <button onClick={() => adoptDog(dog._id)}>Adopt</button>
+                            </>
+                          )}
+                          <button onClick={() => removeDog(dog._id)}>Remove</button>
+                        </>
+                      )}
+                    </li>
+                  ))}
                 </ul>
 
                 <div style={{ marginTop: "10px" }}>
