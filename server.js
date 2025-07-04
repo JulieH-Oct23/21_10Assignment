@@ -15,8 +15,9 @@ const PORT = process.env.PORT || 4000;
 
 // ✅ Updated CORS config
 const allowedOrigins = [
-  "https://dbb5-75-174-60-205.ngrok-free.app",
-  "https://21-10-assignment.vercel.app"
+  "http://localhost:5173", // local dev frontend
+  "https://21-10-assignment-pe57nq2za-julie-harts-projects.vercel.app", // Vercel deployed frontend
+  "https://12c5-75-174-60-205.ngrok-free.app" // your current ngrok public backend
 ];
 
 app.use(cors({
