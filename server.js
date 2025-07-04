@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 4000;
 
 // ✅ Updated CORS config
 const allowedOrigins = [
-  "http://localhost:5173",
+  "https://dbb5-75-174-60-205.ngrok-free.app",
   "https://21-10-assignment.vercel.app"
 ];
 
