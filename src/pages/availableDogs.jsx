@@ -1,7 +1,7 @@
 import { Box, Heading, Spinner, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
-const API_BASE = "http://localhost:4000/api";
+const API_BASE = "https://c650-75-174-60-205.ngrok-free.app"
 
 function AvailableDogs({ token }) {
   const [dogs, setDogs] = useState([]);
