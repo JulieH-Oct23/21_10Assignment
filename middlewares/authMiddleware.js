@@ -5,9 +5,6 @@ import process from "process";
 
 dotenv.config();
 
-/**
- * Middleware to authenticate users via JWT in Authorization header.
- */
 export const authenticateUser = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
