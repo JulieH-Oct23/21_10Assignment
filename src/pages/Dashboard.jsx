@@ -26,7 +26,7 @@ function Dashboard() {
   const [totalPages, setTotalPages] = useState(1);
   const [adoptedPage, setAdoptedPage] = useState(1);
   const [adoptedTotalPages, setAdoptedTotalPages] = useState(1);
-  const [error, setError] = useState("");
+  const [setError] = useState("");
   const limit = 5;
 
   // Chakra theme values
@@ -164,11 +164,11 @@ function Dashboard() {
         Dog Adoption Dashboard
       </Heading>
 
-      {error && (
+      {/* {error && (
         <Box bg="red.200" color="red.700" p={4} mb={6} borderRadius="md">
           {error}
         </Box>
-      )}
+      )} */}
 
       <VStack spacing={8}>
         {/* Register */}
