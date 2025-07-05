@@ -11,7 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
-const API_BASE = "https://dbb5-75-174-60-205.ngrok-free.app";
+const API_BASE = "https://dbb5-75-174-60-205.ngrok-free.app/api";
 
 function Dashboard() {
   const { token, logout } = useOutletContext();

@@ -11,7 +11,7 @@ import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 
 
-const API_BASE = "https://dbb5-75-174-60-205.ngrok-free.appi";
+const API_BASE = "https://dbb5-75-174-60-205.ngrok-free.appi/api";
 
 function Home() {
   const { token, setToken } = useOutletContext();
