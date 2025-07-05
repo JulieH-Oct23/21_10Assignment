@@ -1,3 +1,4 @@
+// server.js
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
@@ -13,19 +14,28 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// ✅ Updated CORS config
-const allowedOrigins = [
-  "http://localhost:5173", // local dev frontend
-  "https://21-10-assignment-pe57nq2za-julie-harts-projects.vercel.app", // Vercel deployed frontend
-  "https://12c5-75-174-60-205.ngrok-free.app" // your current ngrok public backend
-];
+// ✅ Smart CORS Setup
+const rawOrigins = process.env.ALLOWED_ORIGINS || "";
+const allowedOrigins = rawOrigins.split(",").map(origin => origin.trim());
+
+const matchOrigin = (origin) => {
+  if (!origin) return true; // allow curl/Postman
+  return allowedOrigins.some(allowed => {
+    if (allowed.includes("*")) {
+      const regex = new RegExp("^" + allowed.replace(/\*/g, ".*") + "$");
+      return regex.test(origin);
+    }
+    return origin === allowed;
+  });
+};
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    console.log("🌐 CORS Origin:", origin);
+    if (matchOrigin(origin)) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error("❌ Not allowed by CORS"));
     }
   },
   credentials: true
@@ -46,7 +56,6 @@ app.get("/", (req, res) => {
 // DB & Server Start
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    // Listen on 0.0.0.0 to accept remote connections
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on port ${PORT}`);
     });
