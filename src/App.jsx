@@ -26,25 +26,7 @@ function App() {
     navigate("/");
   };
 
-  // const register = async () => {
-  //   setError("");
-  //   try {
-  //     const res = await fetch(`${API_BASE}/auth/register`, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ username, password }),
-  //     });
-  //     const data = await res.json();
-  //     if (!res.ok) throw new Error(data.message || "Registration failed");
-  //     alert(data.message);
-  //     setUsername("");
-  //     setPassword("");
-  //   } catch (err) {
-  //     setError(err.message);
-  //   }
-  // };
-
-  const register = async () => {
+const register = async () => {
   setError("");
   try {
     const res = await fetch(`${API_BASE}/auth/register`, {
@@ -53,9 +35,14 @@ function App() {
       body: JSON.stringify({ username, password }),
     });
 
+    const contentType = res.headers.get("content-type");
     if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Registration failed: ${text}`);
+      const errorText = await res.text();
+      throw new Error(`Registration failed: ${errorText}`);
+    }
+
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("Registration failed: Server did not return JSON");
     }
 
     const data = await res.json();
@@ -63,32 +50,10 @@ function App() {
     setUsername("");
     setPassword("");
   } catch (err) {
-    setError(err.message);
+    setError(err.message || "Unexpected error during registration");
   }
 };
 
-  // const login = async () => {
-  //   setError("");
-  //   try {
-  //     const res = await fetch(`${API_BASE}/auth/login`, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ username, password }),
-  //     });
-  //     const data = await res.json();
-  //     if (data.token) {
-  //       setToken(data.token);
-  //       localStorage.setItem("token", data.token);
-  //       setUsername("");
-  //       setPassword("");
-  //       navigate("/dashboard");
-  //     } else {
-  //       throw new Error("Login failed");
-  //     }
-  //   } catch (err) {
-  //     setError(err.message);
-  //   }
-  // };
 const login = async () => {
   setError("");
   try {
@@ -98,9 +63,14 @@ const login = async () => {
       body: JSON.stringify({ username, password }),
     });
 
+    const contentType = res.headers.get("content-type");
     if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Login failed: ${text}`);
+      const errorText = await res.text();
+      throw new Error(`Login failed: ${errorText}`);
+    }
+
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("Login failed: Server did not return JSON");
     }
 
     const data = await res.json();
@@ -115,7 +85,7 @@ const login = async () => {
       throw new Error("Login failed: No token received");
     }
   } catch (err) {
-    setError(err.message);
+    setError(err.message || "Unexpected error during login");
   }
 };
 
