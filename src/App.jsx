@@ -10,7 +10,7 @@ import {
 import { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
-const API_BASE = "https://dbb5-75-174-60-205.ngrok-free.app/api";
+const API_BASE = "https://ca30-75-174-60-205.ngrok-free.app/api";
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
