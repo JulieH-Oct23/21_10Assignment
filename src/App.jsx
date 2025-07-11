@@ -7,10 +7,10 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
-const API_BASE = "https://ca30-75-174-60-205.ngrok-free.app/api";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
@@ -91,6 +91,12 @@ const login = async () => {
 
 
   const isHomePage = location.pathname === "/";
+
+  useEffect(() => {
+    if (token) {
+       navigate("/dashboard");
+    }
+  }, [token, navigate]);
 
   return (
     <Box p={6} bg="brand.dark.bg" color="brand.dark.text" minH="100vh" pb="80px">

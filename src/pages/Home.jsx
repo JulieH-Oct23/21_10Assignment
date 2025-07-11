@@ -1,17 +1,16 @@
 import {
-    Box,
-    Button,
-    FormControl,
-    Input,
-    Text,
-    VStack,
-    useColorModeValue,
+  Box,
+  Button,
+  FormControl,
+  Input,
+  Text,
+  VStack,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 
-
-const API_BASE = "https://ca30-75-174-60-205.ngrok-free.app/api";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 function Home() {
   const { token, setToken } = useOutletContext();
