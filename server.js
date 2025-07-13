@@ -11,6 +11,12 @@ import dogRoutes from "./routes/dogRoutes.js";
 
 dotenv.config();
 
+dotenv.config();
+
+console.log("Loaded MONGO_URI:", process.env.MONGO_URI ? "YES" : "NO");
+console.log("Loaded ALLOWED_ORIGINS:", process.env.ALLOWED_ORIGINS);
+console.log("Loaded JWT_SECRET:", process.env.JWT_SECRET ? "YES" : "NO");
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 

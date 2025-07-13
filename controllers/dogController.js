@@ -1,109 +1,125 @@
-import Dog from "../models/dogModel.js";
+import Dog from "../models/Dogs.js";
 
-// Register a dog
 export const registerDog = async (req, res) => {
+  console.log("registerDog called, req.body:", req.body);
+  console.log("req.user:", req.user);
   try {
     const { name, description } = req.body;
+    const registeredBy = req.user._id || req.user.id;
+
     const newDog = new Dog({
       name,
       description,
-      owner: req.user.id,
+      registeredBy,
       registrationStatus: "Available",
+      // adoptedBy left as null by default
     });
+
+    console.log("Registering dog:", {
+      name,
+      description,
+      registeredBy,
+      registrationStatus: "Available",
+      adoptedBy: null,
+    });
+
     await newDog.save();
-    res.status(201).json({ message: "Dog registered successfully", dog: newDog });
+
+    res.status(201).json({ message: "Dog registered", dog: newDog });
   } catch (error) {
     console.error("Register Dog Error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Failed to register dog", error: error.message });
   }
 };
 
-// Get user's registered dogs with filtering and pagination
+// Get all dogs registered by the currently logged-in user
 export const getRegisteredDogs = async (req, res) => {
+  const { page = 1, limit = 5, status } = req.query;
+  const skip = (page - 1) * limit;
+
+  const query = {
+    registeredBy: req.user.id, // filters dogs by current logged-in user
+  };
+
+  if (status) query.registrationStatus = status;
+
   try {
-    const { status, page = 1, limit = 10 } = req.query;
-    const query = { owner: req.user.id };
-
-    if (status === "adopted") {
-      query.adoptedBy = { $ne: null };
-    } else if (status === "available") {
-      query.adoptedBy = null;
-    }
-
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const dogs = await Dog.find(query).skip(skip).limit(Number(limit));
     const total = await Dog.countDocuments(query);
-    const dogs = await Dog.find(query)
-      .skip(skip)
-      .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      dogs,
-    });
+    res.json({ dogs, total });
   } catch (error) {
-    console.error("Get Registered Dogs Error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Failed to fetch registered dogs", error: error.message });
   }
 };
 
-// Get user's adopted dogs with pagination
 export const getAdoptedDogs = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    const query = { adoptedBy: req.user.id };
-    const total = await Dog.countDocuments(query);
-    const dogs = await Dog.find(query)
-      .skip(skip)
-      .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      dogs,
-    });
+    // Fetch dogs adopted by current user
+    const dogs = await Dog.find({ adoptedBy: req.user._id }).exec();
+    res.json({ dogs });
   } catch (error) {
-    console.error("Get Adopted Dogs Error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Failed to fetch adopted dogs", error: error.message });
   }
 };
 
-// Adopt a dog
+export const getAvailableDogs = async (req, res) => {
+  try {
+    // Dogs that are "Available" (not adopted) and NOT registered by current user
+    const dogs = await Dog.find({
+      registrationStatus: "Available",
+      adoptedBy: null,
+      registeredBy: { $ne: req.user._id },
+    }).exec();
+    res.json({ dogs });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch available dogs", error: error.message });
+  }
+};
+
 export const adoptDog = async (req, res) => {
   try {
-    const dog = await Dog.findById(req.params.id);
+    const dogId = req.params.id;
+    const userId = req.user._id || req.user.id;
+
+    console.log("Adopt attempt:", { dogId, userId });
+
+    if (!dogId || !userId) {
+      return res.status(400).json({ message: "Missing dogId or userId" });
+    }
+
+    const dog = await Dog.findById(dogId);
 
     if (!dog) {
       return res.status(404).json({ message: "Dog not found" });
     }
 
-    if (dog.owner.toString() === req.user.id) {
-      return res.status(400).json({ message: "You cannot adopt your own dog" });
-    }
-
+    // Prevent adopting own dog or a dog already adopted
     if (dog.adoptedBy) {
       return res.status(400).json({ message: "Dog has already been adopted" });
     }
 
-    dog.adoptedBy = req.user.id;
-    dog.thankYouMessage = req.body.thankYou || null;
+    if (
+      dog.registeredBy &&
+      dog.registeredBy.toString() === userId.toString()
+    ) {
+      return res
+        .status(403)
+        .json({ message: "You cannot adopt a dog you registered" });
+    }
+
+    // Perform adoption
+    dog.adoptedBy = userId;
     dog.registrationStatus = "Adopted";
     await dog.save();
 
-    res.status(200).json({ message: "Dog adopted successfully" });
+    res.status(200).json({ message: "Dog adopted", dog });
   } catch (error) {
-    console.error("Adopt Dog Error:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Adopt Dog Error:", error.message);
+    res.status(500).json({ message: "Failed to adopt dog", error: error.message });
   }
 };
 
-// Remove a dog
+
 export const removeDog = async (req, res) => {
   try {
     const dog = await Dog.findById(req.params.id);
@@ -112,36 +128,18 @@ export const removeDog = async (req, res) => {
       return res.status(404).json({ message: "Dog not found" });
     }
 
-    if (dog.owner.toString() !== req.user.id) {
-      return res.status(403).json({ message: "You can only remove your own dogs" });
+    // Only the user who registered OR adopted the dog can remove it
+    const userId = req.user._id; // Make sure req.user._id is set by authMiddleware
+
+    if (!dog.registeredBy.equals(userId) && !(dog.adoptedBy && dog.adoptedBy.equals(userId))) {
+      return res.status(403).json({ message: "Not authorized to delete this dog" });
     }
 
-    if (dog.adoptedBy) {
-      return res.status(400).json({ message: "Cannot remove an adopted dog" });
-    }
+    await dog.deleteOne();
 
-    await Dog.findByIdAndDelete(dog._id);
-    res.status(200).json({ message: "Dog removed successfully" });
+    res.json({ message: "Dog removed" });
   } catch (error) {
-    console.error("Remove Dog Error:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// ✅ NEW: Get all available dogs not owned by current user and not adopted
-export const getAvailableDogs = async (req, res) => {
-  try {
-    const currentUserId = req.user.id;
-
-    const availableDogs = await Dog.find({
-      registrationStatus: "Available",
-      adoptedBy: null,
-      owner: { $ne: currentUserId },
-    }).sort({ createdAt: -1 });
-
-    res.status(200).json({ dogs: availableDogs });
-  } catch (error) {
-    console.error("Get Available Dogs Error:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Remove Dog Error:", error.message);
+    res.status(500).json({ message: "Failed to remove dog", error: error.message });
   }
 };

@@ -10,6 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
+
 const API_BASE = import.meta.env.VITE_API_URL;
 
 function App() {

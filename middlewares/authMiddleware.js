@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import process from "process";
 
-
 dotenv.config();
 
 export const authenticateUser = (req, res, next) => {
@@ -16,7 +15,14 @@ export const authenticateUser = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Attach user payload (like user ID) to the request
+
+    // Normalize user id
+    req.user = {
+      ...decoded,
+      _id: decoded._id || decoded.id,
+      id: decoded._id || decoded.id,
+    };
+
     next();
   } catch (error) {
     console.error("JWT verification error:", error.message);
