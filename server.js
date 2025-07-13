@@ -18,18 +18,12 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Allowed origins whitelist
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://21-10-assignment.vercel.app",
-];
+const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',');
 
 // CORS options to allow only whitelisted origins and handle preflight OPTIONS
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like Postman or curl)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.log("Blocked by CORS:", origin);
@@ -37,7 +31,7 @@ const corsOptions = {
     }
   },
   credentials: true,
-  optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
+  optionsSuccessStatus: 200,
 };
 
 // Apply CORS middleware with options
