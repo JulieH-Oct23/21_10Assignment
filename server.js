@@ -1,4 +1,3 @@
-// server.js
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
@@ -18,59 +17,53 @@ console.log("Loaded JWT_SECRET:", process.env.JWT_SECRET ? "YES" : "NO");
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// CORS Setup with allowed origins from env
-const rawOrigins = process.env.ALLOWED_ORIGINS || "";
+// Allowed origins whitelist
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://21-10-assignment.vercel.app",
+];
 
-const allowedOrigins = rawOrigins
-  .split(",")
-  .map(origin => origin.trim())
-  .map(origin => {
-    if (origin.includes("*")) {
-      const regex = new RegExp("^" + origin.replace(/\*/g, ".*") + "$");
-      return regex;
-    }
-    return origin;
-  });
+// CORS options to allow only whitelisted origins and handle preflight OPTIONS
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like Postman or curl)
+    if (!origin) return callback(null, true);
 
-const matchOrigin = (origin) => {
-  if (!origin) return true; // allow curl/Postman without origin
-  return allowedOrigins.some(allowed => {
-    if (allowed instanceof RegExp) {
-      return allowed.test(origin);
-    }
-    return origin === allowed;
-  });
-};
-
-app.use(cors({
-  origin: function(origin, callback) {
-    console.log("🌐 CORS Origin:", origin);
-    if (matchOrigin(origin)) {
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(new Error("❌ Not allowed by CORS"));
+      console.log("Blocked by CORS:", origin);
+      callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
-}));
+  optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
+};
 
-// Middleware
+// Apply CORS middleware with options
+app.use(cors(corsOptions));
+
+// Enable preflight requests for all routes
+app.options("*", cors(corsOptions));
+
+// Middleware to parse JSON bodies
 app.use(express.json());
 
-// Routes
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/dogs", dogRoutes);
 
-// Test Route
+// Simple test route to verify server is running
 app.get("/", (req, res) => {
   res.json({ message: "Server is working!" });
 });
 
-// DB & Server Start
-mongoose.connect(process.env.MONGO_URI)
+// Connect to MongoDB and start server
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => {
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ Server running on port ${PORT}`);
     });
   })
-  .catch(err => console.error("❌ MongoDB connection error:", err));
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
