@@ -19,28 +19,7 @@ function Home() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // const handleLogin = async () => {
-  //   setError("");
-  //   try {
-  //     const res = await fetch(`${API_BASE}/auth/login`, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ username, password }),
-  //     });
-
-  //     const data = await res.json();
-
-  //     if (!res.ok) {
-  //       throw new Error(data.message || "Login failed");
-  //     }
-
-  //     setToken(data.token);
-  //     navigate("/dashboard");
-  //   } catch (err) {
-  //     setError(err.message);
-  //   }
-  // };
-const handleLogin = async () => {
+  const handleLogin = async () => {
   setError("");
   try {
     const res = await fetch(`${API_BASE}/auth/login`, {

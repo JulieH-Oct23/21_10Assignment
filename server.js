@@ -22,14 +22,34 @@ const PORT = process.env.PORT || 4000;
 
 // ✅ Smart CORS Setup
 const rawOrigins = process.env.ALLOWED_ORIGINS || "";
-const allowedOrigins = rawOrigins.split(",").map(origin => origin.trim());
+// const allowedOrigins = rawOrigins.split(",").map(origin => origin.trim());
+
+// const matchOrigin = (origin) => {
+//   if (!origin) return true; // allow curl/Postman
+//   return allowedOrigins.some(allowed => {
+//     if (allowed.includes("*")) {
+//       const regex = new RegExp("^" + allowed.replace(/\*/g, ".*") + "$");
+//       return regex.test(origin);
+//     }
+//     return origin === allowed;
+//   });
+// };
+const allowedOrigins = rawOrigins
+  .split(",")
+  .map(origin => origin.trim())
+  .map(origin => {
+    if (origin.includes("*")) {
+      const regex = new RegExp("^" + origin.replace(/\*/g, ".*") + "$");
+      return regex;
+    }
+    return origin;
+  });
 
 const matchOrigin = (origin) => {
-  if (!origin) return true; // allow curl/Postman
+  if (!origin) return true;
   return allowedOrigins.some(allowed => {
-    if (allowed.includes("*")) {
-      const regex = new RegExp("^" + allowed.replace(/\*/g, ".*") + "$");
-      return regex.test(origin);
+    if (allowed instanceof RegExp) {
+      return allowed.test(origin);
     }
     return origin === allowed;
   });
