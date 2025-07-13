@@ -8,4 +8,5 @@ export default defineConfig({
     react(),
     nodePolyfills()
   ],
-})
+  envPrefix: 'VITE_', // ✅ Explicitly allow VITE_ env variables
+});
