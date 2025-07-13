@@ -212,18 +212,16 @@ export const getAvailableDogs = async (req, res) => {
   }
 };
 
-// Get single dog by ID
+// Get a single dog by ID
 export const getDogById = async (req, res) => {
   try {
-    const dogId = req.params.id;
-    const dog = await Dog.findById(dogId);
-
+    const dog = await Dog.findById(req.params.id);
     if (!dog) {
       return res.status(404).json({ message: "Dog not found" });
     }
-
     res.json(dog);
   } catch (error) {
+    console.error("Get Dog By ID Error:", error.message);
     res.status(500).json({ message: "Failed to fetch dog", error: error.message });
   }
 };
