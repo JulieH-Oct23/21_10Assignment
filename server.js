@@ -17,13 +17,38 @@ console.log("Loaded JWT_SECRET:", process.env.JWT_SECRET ? "YES" : "NO");
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// Allowed origins whitelist
-const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',');
+// // Allowed origins whitelist
+// const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',');
 
-// CORS options to allow only whitelisted origins and handle preflight OPTIONS
+// // CORS options to allow only whitelisted origins and handle preflight OPTIONS
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     if (!origin || allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } else {
+//       console.log("Blocked by CORS:", origin);
+//       callback(new Error("Not allowed by CORS"));
+//     }
+//   },
+//   credentials: true,
+//   optionsSuccessStatus: 200,
+// };
+
+// // Apply CORS middleware with options
+// app.use(cors(corsOptions));
+
+// // Enable preflight requests for all routes
+// app.options("*", cors(corsOptions));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://21-10-assignment.vercel.app",
+];
+
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) return callback(null, true); // allow non-browser requests like Postman
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       console.log("Blocked by CORS:", origin);
@@ -34,11 +59,9 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 
-// Apply CORS middleware with options
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // enable preflight for all routes
 
-// Enable preflight requests for all routes
-app.options("*", cors(corsOptions));
 
 // Middleware to parse JSON bodies
 app.use(express.json());
