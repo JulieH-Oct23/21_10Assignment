@@ -11,8 +11,6 @@ import dogRoutes from "./routes/dogRoutes.js";
 
 dotenv.config();
 
-dotenv.config();
-
 console.log("Loaded MONGO_URI:", process.env.MONGO_URI ? "YES" : "NO");
 console.log("Loaded ALLOWED_ORIGINS:", process.env.ALLOWED_ORIGINS);
 console.log("Loaded JWT_SECRET:", process.env.JWT_SECRET ? "YES" : "NO");
@@ -20,20 +18,9 @@ console.log("Loaded JWT_SECRET:", process.env.JWT_SECRET ? "YES" : "NO");
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// ✅ Smart CORS Setup
+// CORS Setup with allowed origins from env
 const rawOrigins = process.env.ALLOWED_ORIGINS || "";
-// const allowedOrigins = rawOrigins.split(",").map(origin => origin.trim());
 
-// const matchOrigin = (origin) => {
-//   if (!origin) return true; // allow curl/Postman
-//   return allowedOrigins.some(allowed => {
-//     if (allowed.includes("*")) {
-//       const regex = new RegExp("^" + allowed.replace(/\*/g, ".*") + "$");
-//       return regex.test(origin);
-//     }
-//     return origin === allowed;
-//   });
-// };
 const allowedOrigins = rawOrigins
   .split(",")
   .map(origin => origin.trim())
@@ -46,7 +33,7 @@ const allowedOrigins = rawOrigins
   });
 
 const matchOrigin = (origin) => {
-  if (!origin) return true;
+  if (!origin) return true; // allow curl/Postman without origin
   return allowedOrigins.some(allowed => {
     if (allowed instanceof RegExp) {
       return allowed.test(origin);
@@ -56,7 +43,7 @@ const matchOrigin = (origin) => {
 };
 
 app.use(cors({
-  origin: function (origin, callback) {
+  origin: function(origin, callback) {
     console.log("🌐 CORS Origin:", origin);
     if (matchOrigin(origin)) {
       callback(null, true);
@@ -64,7 +51,7 @@ app.use(cors({
       callback(new Error("❌ Not allowed by CORS"));
     }
   },
-  credentials: true
+  credentials: true,
 }));
 
 // Middleware
@@ -82,7 +69,7 @@ app.get("/", (req, res) => {
 // DB & Server Start
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    app.listen(PORT, '0.0.0.0', () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ Server running on port ${PORT}`);
     });
   })
